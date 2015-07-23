@@ -12,4 +12,3 @@ let mainWindow : System.Windows.Window = getXamlResource "MainWindow.xaml"
 
 [<System.STAThread>]
 do System.Windows.Application().Run(mainWindow) |> ignore
-
