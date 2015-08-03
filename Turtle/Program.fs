@@ -1,12 +1,27 @@
 ﻿module Program
 
+#if INTERACTIVE
+#r @"System.Windows.Presentation.dll"
+#r @"PresentationCore.dll"
+#r @"PresentationFramework.dll"
+#r @"..\packages\FParsec.1.0.1\lib\net40-client\FParsecCS.dll"
+#r @"..\packages\FParsec.1.0.1\lib\net40-client\FParsec.dll"
+#endif
+
 open System
 open System.Reflection
 open System.Windows
 open System.Windows.Controls
 open System.Windows.Shapes
 open System.Windows.Media
+open FParsec
 
+let test p str =
+    match run p str with
+    | Success(result, _, _)   -> printfn "Success: %A" result
+    | Failure(errorMsg, _, _) -> printfn "Failure: %s" errorMsg
+
+test pfloat "1.25"
 
 type Turtle = { x : float; y : float; }
 
@@ -33,9 +48,9 @@ let rec drawTurtles turtles =
     | [] -> ignore
     | h :: [] -> ignore
     | h :: t -> 
-        let startPoint = h
-        let endPoint = List.head(t)
-        drawLine startPoint.x startPoint.y endPoint.x endPoint.y
+        let startTurtle = h
+        let endTurtle = List.head(t)
+        drawLine startTurtle.x startTurtle.y endTurtle.x endTurtle.y
         drawTurtles t
 
 let myTurtles = [{ x = 100.0; y = 100.0; }; {x = 200.0; y = 200.0; }; { x = 300.0; y = 100.0; }]
