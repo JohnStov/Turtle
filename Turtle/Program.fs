@@ -21,7 +21,22 @@ let test p str =
     | Success(result, _, _)   -> printfn "Success: %A" result
     | Failure(errorMsg, _, _) -> printfn "Failure: %s" errorMsg
 
-test pfloat "1.25"
+type Arg = float
+type Command = 
+    | Forward of Arg
+    | Turn of Arg
+    | Repeat of int * Command list
+
+let pforward = pstring "forward" >>. spaces1 >>. pfloat |>> Forward
+let pright = pstring "right" >>. spaces1 >>. pfloat |>> Turn
+let pleft = pstring "left" >>. spaces1 >>. pfloat |>> fun n -> Turn (-n)
+let prepeat, prepeatimpl = createParserForwardedToRef ()
+let pcommand = pforward <|> pright <|> pleft <|> prepeat
+let pcommands = many (pcommand .>> spaces)
+let block = between (pstring "[") (pstring "]") pcommands
+prepeatimpl := pstring "repeat" >>. spaces1 >>. pfloat .>> spaces .>>. block |>> fun (n, commands) -> Repeat(int n, commands)
+
+test pcommands "repeat 10 [right 36 repeat 5 [forward 54 right 72]]"
 
 type Turtle = { x : float; y : float; }
 
