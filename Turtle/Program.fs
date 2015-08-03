@@ -8,8 +8,7 @@ open System.Windows.Shapes
 open System.Windows.Media
 
 
-type MyLine = { x1 : float; x2 : float; y1 : float; y2 : float
-}
+type Turtle = { x : float; y : float; }
 
 let getXamlResource xaml = 
   sprintf "/%s;component/%s" (Assembly.GetExecutingAssembly().GetName().Name) xaml
@@ -20,24 +19,27 @@ let getXamlResource xaml =
 let mainWindow : Window = getXamlResource "MainWindow.xaml" 
 let canvas = mainWindow.FindName("canvas") :?> Canvas
 
-let drawLine myLine =
+let drawLine x1 y1 x2 y2 =
     let line = new Line()
     line.Stroke <- Brushes.Red
-    line.X1 <- myLine.x1
-    line.X2 <- myLine.x2
-    line.Y1 <- myLine.y1
-    line.Y2 <- myLine.y2
+    line.X1 <- x1
+    line.X2 <- x2
+    line.Y1 <- y1
+    line.Y2 <- y2
     canvas.Children.Add(line) |> ignore
 
-let rec drawLines lines =
-    match lines with
+let rec drawTurtles turtles =
+    match turtles with
     | [] -> ignore
+    | h :: [] -> ignore
     | h :: t -> 
-        drawLine h
-        drawLines t
+        let startPoint = h
+        let endPoint = List.head(t)
+        drawLine startPoint.x startPoint.y endPoint.x endPoint.y
+        drawTurtles t
 
-let myLines = [{ x1 = 100.0; y1 = 100.0; x2 = 200.0; y2 = 200.0; }; { x1 = 200.0; y1 = 200.0; x2 = 300.0; y2 = 100.0; }]
-drawLines myLines |> ignore
+let myTurtles = [{ x = 100.0; y = 100.0; }; {x = 200.0; y = 200.0; }; { x = 300.0; y = 100.0; }]
+drawTurtles myTurtles |> ignore
 
 [<System.STAThread>]
 do System.Windows.Application().Run(mainWindow) |> ignore
