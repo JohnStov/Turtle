@@ -36,9 +36,26 @@ let pcommands = many (pcommand .>> spaces)
 let block = between (pstring "[") (pstring "]") pcommands
 prepeatimpl := pstring "repeat" >>. spaces1 >>. pfloat .>> spaces .>>. block |>> fun (n, commands) -> Repeat(int n, commands)
 
-test pcommands "repeat 10 [right 36 repeat 5 [forward 54 right 72]]"
+type Turtle = { x : float; y : float; angle : float}
 
-type Turtle = { x : float; y : float; }
+let rec decode command turtle = 
+    match command with 
+    | Forward(n) -> [{turtle with x = turtle.x + (n * cos(turtle.angle / 360.0 * 2.0 * Math.PI)); y = turtle.y + (n * sin(turtle.angle / 360.0 * 2.0 * Math.PI));}]
+    | Turn(n) -> [{turtle with angle = (turtle.angle + n) % 360.0}]
+    | Repeat(n, cmds) ->
+        let mutable result = [turtle]
+        let mutable i = 0
+        while i < n do
+            result <- List.append result (treeWalk cmds (List.last result))
+            i <- i + 1
+        result
+
+and treeWalk commands turtle =
+    match commands with
+    | [] -> [turtle]
+    | h :: t -> 
+        let turtles = decode h turtle
+        List.append (turtle :: turtles) (treeWalk t (List.last(turtles)))
 
 let getXamlResource xaml = 
   sprintf "/%s;component/%s" (Assembly.GetExecutingAssembly().GetName().Name) xaml
@@ -48,6 +65,8 @@ let getXamlResource xaml =
 
 let mainWindow : Window = getXamlResource "MainWindow.xaml" 
 let canvas = mainWindow.FindName("canvas") :?> Canvas
+let startx = mainWindow.Width/2.0
+let starty = mainWindow.Height/2.0
 
 let drawLine x1 y1 x2 y2 =
     let line = new Line()
@@ -63,13 +82,18 @@ let rec drawTurtles turtles =
     | [] -> ignore
     | h :: [] -> ignore
     | h :: t -> 
-        let startTurtle = h
         let endTurtle = List.head(t)
-        drawLine startTurtle.x startTurtle.y endTurtle.x endTurtle.y
+        drawLine h.x h.y endTurtle.x endTurtle.y
         drawTurtles t
 
-let myTurtles = [{ x = 100.0; y = 100.0; }; {x = 200.0; y = 200.0; }; { x = 300.0; y = 100.0; }]
-drawTurtles myTurtles |> ignore
+let result = run pcommands "repeat 10 [right 36 repeat 5 [forward 54 right 72]]"
+
+match result with
+    | Success(commands, _, _) -> 
+        let turtles = treeWalk commands {x = startx; y = starty; angle = 0.0;}
+        drawTurtles turtles |> ignore
+        printfn "Success"
+    | Failure(error, _, _) -> printfn "Failed"
 
 [<System.STAThread>]
 do System.Windows.Application().Run(mainWindow) |> ignore
